@@ -1,0 +1,3 @@
+dependencies {
+    // Model module should only contain domain logic without framework dependencies
+}
