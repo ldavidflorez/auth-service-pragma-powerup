@@ -15,6 +15,7 @@ public class UserRouter {
     @Bean
     public RouterFunction<ServerResponse> userRoutes(UserHandler userHandler) {
         return route(POST("/api/v1/usuarios"), userHandler::registerUser)
-                .andRoute(GET("/api/v1/usuarios/email"), userHandler::findUserByEmail);
+                .andRoute(GET("/api/v1/usuarios/email"), userHandler::findUserByEmail)
+                .andRoute(GET("/api/v1/usuarios"), userHandler::listAllUsers);
     }
 }

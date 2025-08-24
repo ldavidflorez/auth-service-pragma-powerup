@@ -1,0 +1,51 @@
+# Gradle
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+build/
+!build/libs/*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation
+README.md
+docs/
+
+# Test files
+src/test/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker.env
+README-Docker.md
+
+# Other
+node_modules/
+*.md
+
+# Environment variables
+.env

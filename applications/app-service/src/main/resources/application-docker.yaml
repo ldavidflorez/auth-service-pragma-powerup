@@ -1,0 +1,47 @@
+##Spring Configuration for Docker Environment
+server:
+  port: 8081
+
+spring:
+  application:
+    name: "AuthService"
+  devtools:
+    add-properties: false
+  sql:
+    init:
+      mode: "always"
+      schema-locations: "classpath:schema.sql"
+  config:
+    import: "optional:classpath:/application-{profile}.yaml"
+
+# Database configuration for Docker environment
+adapters:
+  r2dbc:
+    host: ${ADAPTERS_R2DBC_HOST:postgres}
+    port: ${ADAPTERS_R2DBC_PORT:5432}
+    database: ${ADAPTERS_R2DBC_DATABASE:pragma_auth}
+    schema: ${ADAPTERS_R2DBC_SCHEMA:public}
+    username: ${ADAPTERS_R2DBC_USERNAME:postgres}
+    password: ${ADAPTERS_R2DBC_PASSWORD:postgres}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+cors:
+  allowed-origins: "http://localhost:4200,http://localhost:8080"
+
+# Logging configuration for Docker
+logging:
+  level:
+    co.com.powerup.pragma: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql: DEBUG
+  pattern:
+    console: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"

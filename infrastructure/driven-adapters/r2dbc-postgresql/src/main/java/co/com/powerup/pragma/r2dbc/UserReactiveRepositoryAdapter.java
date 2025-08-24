@@ -4,11 +4,13 @@ import co.com.powerup.pragma.model.user.User;
 import co.com.powerup.pragma.model.user.gateways.UserRepository;
 import co.com.powerup.pragma.r2dbc.data.UserData;
 import co.com.powerup.pragma.r2dbc.helper.ReactiveAdapterOperations;
+
 import org.reactivecommons.utils.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -29,17 +31,14 @@ public class UserReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     @Transactional
     public Mono<User> save(User user) {
         logger.info("Guardando usuario en base de datos - ID: {} y email: {}", user.getId(), user.getCorreoElectronico());
-        UserData userData = toData(user);
-        return repository.save(userData)
-                .doOnSuccess(savedData -> logger.info("Usuario guardado exitosamente en BD - ID: {} y email: {}", 
-                        savedData.getId(), savedData.getCorreoElectronico()))
+        return super.save(user)
+                .doOnSuccess(savedUser -> logger.info("Usuario guardado exitosamente en BD - ID: {} y email: {}", 
+                        savedUser.getId(), savedUser.getCorreoElectronico()))
                 .doOnError(error -> logger.error("Error al guardar usuario en BD - email {}: {}", 
-                        user.getCorreoElectronico(), error.getMessage()))
-                .map(this::toEntity);
+                        user.getCorreoElectronico(), error.getMessage()));
     }
     
     @Override
-    @Transactional(readOnly = true)
     public Mono<Boolean> existsByEmail(String email) {
         logger.debug("Verificando existencia de usuario en BD con email: {}", email);
         return repository.existsByCorreoElectronico(email)
@@ -48,7 +47,6 @@ public class UserReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     }
     
     @Override
-    @Transactional(readOnly = true)
     public Mono<User> findByEmail(String email) {
         logger.debug("Buscando usuario en BD con email: {}", email);
         return repository.findByCorreoElectronico(email)
@@ -61,6 +59,15 @@ public class UserReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                 })
                 .doOnError(error -> logger.error("Error al buscar usuario en BD - email {}: {}", email, error.getMessage()))
                 .map(this::toEntity);
+    }
+    
+    @Override
+    public Flux<User> findAll() {
+        logger.info("Listando todos los usuarios de la base de datos");
+        return super.findAll()
+                .doOnNext(user -> logger.debug("Usuario encontrado en BD - ID: {} y email: {}", user.getId(), user.getCorreoElectronico()))
+                .doOnComplete(() -> logger.info("Listado de usuarios completado"))
+                .doOnError(error -> logger.error("Error al listar usuarios en BD: {}", error.getMessage()));
     }
     
     @Override

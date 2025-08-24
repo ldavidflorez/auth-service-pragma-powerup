@@ -1,0 +1,45 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pragma-auth-postgres
+    environment:
+      POSTGRES_DB: pragma_auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/driven-adapters/r2dbc-postgresql/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - pragma-network
+
+  # Spring Boot Application
+  auth-service:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
+    container_name: pragma-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - ADAPTERS_R2DBC_HOST=postgres
+      - ADAPTERS_R2DBC_PORT=5432
+      - ADAPTERS_R2DBC_DATABASE=pragma_auth
+      - ADAPTERS_R2DBC_SCHEMA=public
+      - ADAPTERS_R2DBC_USERNAME=postgres
+      - ADAPTERS_R2DBC_PASSWORD=postgres
+    depends_on:
+      - postgres
+    networks:
+      - pragma-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pragma-network:
+    driver: bridge
