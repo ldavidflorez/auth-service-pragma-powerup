@@ -17,6 +17,19 @@ spring:
       schema-locations: "classpath:schema.sql"
   config:
     import: "optional:classpath:/application-{profile}.yaml"
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+    filter: true
+  packages-to-scan: co.com.powerup.pragma.api
+
 adapters:
   r2dbc:
     host: "localhost"
