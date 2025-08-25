@@ -16,22 +16,21 @@ public class FindByEmailUseCase {
      * @return Mono<User> the user if found, empty Mono otherwise
      */
     public Mono<User> findByEmail(String email) {
-        System.out.println("INFO: Iniciando busqueda de usuario por email: " + email);
-        return Mono.just(email)
-                .doOnNext(e -> System.out.println("DEBUG: Validando formato de email para busqueda: " + e))
-                .doOnNext(this::validateEmail)
-                .flatMap(e -> {
-                    System.out.println("DEBUG: Buscando usuario en repositorio con email: " + e);
-                    return userRepository.findByEmail(e);
-                })
-                .doOnSuccess(user -> {
-                    if (user != null) {
-                        System.out.println("INFO: Usuario encontrado exitosamente - ID: " + user.getId() + " y email: " + user.getCorreoElectronico());
-                    } else {
-                        System.out.println("INFO: Usuario no encontrado con email: " + email);
-                    }
-                })
-                .doOnError(error -> System.out.println("ERROR: Error al buscar usuario con email " + email + ": " + error.getMessage()));
+        return Mono.defer(() -> {
+            System.out.println("DEBUG: Validando formato de email para busqueda: " + email);
+            validateEmail(email);
+            System.out.println("INFO: Iniciando busqueda de usuario por email: " + email);
+            System.out.println("DEBUG: Buscando usuario en repositorio con email: " + email);
+            return userRepository.findByEmail(email)
+                    .doOnSuccess(user -> {
+                        if (user != null) {
+                            System.out.println("INFO: Usuario encontrado exitosamente - ID: " + user.getId() + " y email: " + user.getCorreoElectronico());
+                        } else {
+                            System.out.println("INFO: Usuario no encontrado con email: " + email);
+                        }
+                    })
+                    .doOnError(error -> System.out.println("ERROR: Error al buscar usuario con email " + email + ": " + error.getMessage()));
+        });
     }
     
     /**

@@ -15,22 +15,21 @@ public class ExistsByEmailUseCase {
      * @return Mono<Boolean> true if user exists, false otherwise
      */
     public Mono<Boolean> existsByEmail(String email) {
-        System.out.println("INFO: Verificando existencia de usuario con email: " + email);
-        return Mono.just(email)
-                .doOnNext(e -> System.out.println("DEBUG: Validando formato de email para verificacion: " + e))
-                .doOnNext(this::validateEmail)
-                .flatMap(e -> {
-                    System.out.println("DEBUG: Verificando existencia en repositorio con email: " + e);
-                    return userRepository.existsByEmail(e);
-                })
-                .doOnSuccess(exists -> {
-                    if (exists) {
-                        System.out.println("INFO: Usuario existe con email: " + email);
-                    } else {
-                        System.out.println("INFO: Usuario no existe con email: " + email);
-                    }
-                })
-                .doOnError(error -> System.out.println("ERROR: Error al verificar existencia de usuario con email " + email + ": " + error.getMessage()));
+        return Mono.defer(() -> {
+            System.out.println("DEBUG: Validando formato de email para verificacion: " + email);
+            validateEmail(email);
+            System.out.println("INFO: Verificando existencia de usuario con email: " + email);
+            System.out.println("DEBUG: Verificando existencia en repositorio con email: " + email);
+            return userRepository.existsByEmail(email)
+                    .doOnSuccess(exists -> {
+                        if (exists) {
+                            System.out.println("INFO: Usuario existe con email: " + email);
+                        } else {
+                            System.out.println("INFO: Usuario no existe con email: " + email);
+                        }
+                    })
+                    .doOnError(error -> System.out.println("ERROR: Error al verificar existencia de usuario con email " + email + ": " + error.getMessage()));
+        });
     }
     
     /**

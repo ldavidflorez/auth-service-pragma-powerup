@@ -1,3 +1,4 @@
 dependencies {
     // Model module should only contain domain logic without framework dependencies
+    // Testing dependencies are inherited from parent project
 }
