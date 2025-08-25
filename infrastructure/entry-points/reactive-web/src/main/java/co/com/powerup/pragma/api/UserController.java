@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -76,7 +77,7 @@ public class UserController {
                             .apellidos(savedUser.getApellidos())
                             .correoElectronico(savedUser.getCorreoElectronico())
                             .fechaRegistro(savedUser.getFechaRegistro() != null ? savedUser.getFechaRegistro().toString() : null)
-                            .mensaje("Usuario registrado exitosamente")
+                            // .mensaje("Usuario registrado exitosamente")
                             .build();
                 });
     }
@@ -129,7 +130,7 @@ public class UserController {
                             .apellidos(user.getApellidos())
                             .correoElectronico(user.getCorreoElectronico())
                             .fechaRegistro(user.getFechaRegistro() != null ? user.getFechaRegistro().toString() : null)
-                            .mensaje("Usuario encontrado exitosamente")
+                            // .mensaje("Usuario encontrado exitosamente")
                             .build();
                 });
     }
@@ -137,7 +138,7 @@ public class UserController {
     @GetMapping
     @Operation(
         summary = "Listar todos los usuarios",
-        description = "Obtiene una lista de todos los usuarios registrados en el sistema (stream reactivo)"
+        description = "Obtiene una lista de todos los usuarios registrados en el sistema"
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -145,7 +146,6 @@ public class UserController {
             description = "Lista de usuarios obtenida exitosamente",
             content = @Content(
                 mediaType = "application/json",
-                // mediaType = "text/event-stream",
                 schema = @Schema(implementation = UserResponse.class)
             )
         ),
@@ -161,7 +161,6 @@ public class UserController {
     public Flux<UserResponse> listAllUsers() {
         logger.info("Recibida solicitud de listado de todos los usuarios");
         return listAllUsersUseCase.listAllUsers()
-                // .delayElements(Duration.ofMillis(1000)) // Delay para visualizar el flujo
                 .doOnNext(user -> logger.info("Procesando usuario - ID: {} y email: {}", user.getId(), user.getCorreoElectronico()))
                 .map(user -> UserResponse.builder()
                         .id(user.getId())
@@ -171,6 +170,44 @@ public class UserController {
                         .fechaRegistro(user.getFechaRegistro() != null ? user.getFechaRegistro().toString() : null)
                         .build())
                 .doOnNext(userResponse -> logger.info("Usuario mapeado - ID: {} y email: {}", userResponse.getId(), userResponse.getCorreoElectronico()));
+    }
+    
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(
+        summary = "Listar todos los usuarios (Stream)",
+        description = "Obtiene una lista de todos los usuarios registrados en el sistema como Server-Sent Events"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Stream de usuarios obtenido exitosamente",
+            content = @Content(
+                mediaType = MediaType.TEXT_EVENT_STREAM_VALUE,
+                schema = @Schema(implementation = UserResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class)
+            )
+        )
+    })
+    public Flux<UserResponse> listAllUsersStream() {
+        logger.info("Recibida solicitud de listado de todos los usuarios (stream)");
+        return listAllUsersUseCase.listAllUsers()
+                .delayElements(Duration.ofMillis(1000)) // Delay para visualizar el flujo
+                .doOnNext(user -> logger.info("Procesando usuario (stream) - ID: {} y email: {}", user.getId(), user.getCorreoElectronico()))
+                .map(user -> UserResponse.builder()
+                        .id(user.getId())
+                        .nombres(user.getNombres())
+                        .apellidos(user.getApellidos())
+                        .correoElectronico(user.getCorreoElectronico())
+                        .fechaRegistro(user.getFechaRegistro() != null ? user.getFechaRegistro().toString() : null)
+                        .build())
+                .doOnNext(userResponse -> logger.info("Usuario mapeado (stream) - ID: {} y email: {}", userResponse.getId(), userResponse.getCorreoElectronico()));
     }
     
     /**
@@ -192,9 +229,6 @@ public class UserController {
         
         @Schema(description = "Fecha de registro del usuario", example = "2025-08-24")
         private String fechaRegistro;
-        
-        @Schema(description = "Mensaje de respuesta", example = "Usuario registrado exitosamente")
-        private String mensaje;
         
         // Builder pattern
         public static UserResponseBuilder builder() {
@@ -229,11 +263,6 @@ public class UserController {
                 return this;
             }
             
-            public UserResponseBuilder mensaje(String mensaje) {
-                response.mensaje = mensaje;
-                return this;
-            }
-            
             public UserResponse build() {
                 return response;
             }
@@ -245,7 +274,6 @@ public class UserController {
         public String getApellidos() { return apellidos; }
         public String getCorreoElectronico() { return correoElectronico; }
         public String getFechaRegistro() { return fechaRegistro; }
-        public String getMensaje() { return mensaje; }
     }
     
     /**
