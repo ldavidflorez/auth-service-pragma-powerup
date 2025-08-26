@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -30,58 +29,34 @@ public class UserReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     @Override
     @Transactional
     public Mono<User> save(User user) {
-        logger.info("Guardando usuario en base de datos - ID: {} y email: {}", user.getId(), user.getCorreoElectronico());
+        logger.info("Saving user to database - ID: {} and email: {}", user.getId(), user.getEmail());
         return super.save(user)
-                .doOnSuccess(savedUser -> logger.info("Usuario guardado exitosamente en BD - ID: {} y email: {}", 
-                        savedUser.getId(), savedUser.getCorreoElectronico()))
-                .doOnError(error -> logger.error("Error al guardar usuario en BD - email {}: {}", 
-                        user.getCorreoElectronico(), error.getMessage()));
+                .doOnSuccess(savedUser -> logger.info("User saved successfully in DB - ID: {} and email: {}", 
+                        savedUser.getId(), savedUser.getEmail()))
+                .doOnError(error -> logger.error("Error saving user in DB - email {}: {}", 
+                        user.getEmail(), error.getMessage()));
     }
     
     @Override
     public Mono<Boolean> existsByEmail(String email) {
-        logger.debug("Verificando existencia de usuario en BD con email: {}", email);
-        return repository.existsByCorreoElectronico(email)
-                .doOnSuccess(exists -> logger.debug("Resultado de verificacion de existencia - email: {} existe: {}", email, exists))
-                .doOnError(error -> logger.error("Error al verificar existencia de usuario en BD - email {}: {}", email, error.getMessage()));
-    }
-    
-    @Override
-    public Mono<User> findByEmail(String email) {
-        logger.debug("Buscando usuario en BD con email: {}", email);
-        return repository.findByCorreoElectronico(email)
-                .doOnSuccess(userData -> {
-                    if (userData != null) {
-                        logger.debug("Usuario encontrado en BD - ID: {} y email: {}", userData.getId(), userData.getCorreoElectronico());
-                    } else {
-                        logger.debug("Usuario no encontrado en BD con email: {}", email);
-                    }
-                })
-                .doOnError(error -> logger.error("Error al buscar usuario en BD - email {}: {}", email, error.getMessage()))
-                .map(this::toEntity);
-    }
-    
-    @Override
-    public Flux<User> findAll() {
-        logger.info("Listando todos los usuarios de la base de datos");
-        return super.findAll()
-                .doOnNext(user -> logger.debug("Usuario encontrado en BD - ID: {} y email: {}", user.getId(), user.getCorreoElectronico()))
-                .doOnComplete(() -> logger.info("Listado de usuarios completado"))
-                .doOnError(error -> logger.error("Error al listar usuarios en BD: {}", error.getMessage()));
+        logger.debug("Checking user existence in DB with email: {}", email);
+        return repository.existsByEmail(email)
+                .doOnSuccess(exists -> logger.debug("Existence check result - email: {} exists: {}", email, exists))
+                .doOnError(error -> logger.error("Error checking user existence in DB - email {}: {}", email, error.getMessage()));
     }
     
     @Override
     protected UserData toData(User user) {
         return UserData.builder()
                 .id(user.getId())
-                .nombres(user.getNombres())
-                .apellidos(user.getApellidos())
-                .fechaNacimiento(user.getFechaNacimiento())
-                .direccion(user.getDireccion())
-                .telefono(user.getTelefono())
-                .correoElectronico(user.getCorreoElectronico())
-                .salarioBase(user.getSalarioBase())
-                .fechaRegistro(user.getFechaRegistro())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .dateOfBirth(user.getDateOfBirth())
+                .address(user.getAddress())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .baseSalary(user.getBaseSalary())
+                .registrationDate(user.getRegistrationDate())
                 .build();
     }
     
@@ -89,14 +64,14 @@ public class UserReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     protected User toEntity(UserData userData) {
         return User.builder()
                 .id(userData.getId())
-                .nombres(userData.getNombres())
-                .apellidos(userData.getApellidos())
-                .fechaNacimiento(userData.getFechaNacimiento())
-                .direccion(userData.getDireccion())
-                .telefono(userData.getTelefono())
-                .correoElectronico(userData.getCorreoElectronico())
-                .salarioBase(userData.getSalarioBase())
-                .fechaRegistro(userData.getFechaRegistro())
+                .firstName(userData.getFirstName())
+                .lastName(userData.getLastName())
+                .dateOfBirth(userData.getDateOfBirth())
+                .address(userData.getAddress())
+                .phone(userData.getPhone())
+                .email(userData.getEmail())
+                .baseSalary(userData.getBaseSalary())
+                .registrationDate(userData.getRegistrationDate())
                 .build();
     }
 }

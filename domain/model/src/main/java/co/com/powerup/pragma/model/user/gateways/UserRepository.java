@@ -1,7 +1,6 @@
 package co.com.powerup.pragma.model.user.gateways;
 
 import co.com.powerup.pragma.model.user.User;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface UserRepository {
@@ -19,17 +18,4 @@ public interface UserRepository {
      * @return Mono<Boolean> true if email exists, false otherwise
      */
     Mono<Boolean> existsByEmail(String email);
-    
-    /**
-     * Finds a user by email
-     * @param email the email to search for
-     * @return Mono<User> the user if found, empty Mono otherwise
-     */
-    Mono<User> findByEmail(String email);
-
-    /**
-     * Retrieves all users from the database
-     * @return Flux<User> all users in the system
-     */
-    Flux<User> findAll();
 }

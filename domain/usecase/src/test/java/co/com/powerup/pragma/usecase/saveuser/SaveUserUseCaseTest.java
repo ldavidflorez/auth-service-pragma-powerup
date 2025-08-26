@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -32,18 +33,18 @@ class SaveUserUseCaseTest {
     void saveUser_Success() {
         // Arrange
         User user = User.builder()
-                .nombres("Juan")
-                .apellidos("Perez")
-                .correoElectronico("juan.perez@test.com")
-                .fechaNacimiento(LocalDate.of(1990, 5, 15))
-                .salarioBase(5000000.0)
-                .telefono("3001234567")
-                .direccion("Calle 123 #45-67")
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .phone("3001234567")
+                .address("123 Main St")
                 .build();
 
         User savedUser = user.toBuilder()
                 .id(1L)
-                .fechaRegistro(LocalDate.now())
+                .registrationDate(LocalDate.now())
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(Mono.just(savedUser));
@@ -52,8 +53,8 @@ class SaveUserUseCaseTest {
         StepVerifier.create(saveUserUseCase.saveUser(user))
                 .expectNextMatches(result -> 
                     result.getId().equals(1L) &&
-                    result.getCorreoElectronico().equals("juan.perez@test.com") &&
-                    result.getFechaRegistro() != null
+                    result.getEmail().equals("john.doe@test.com") &&
+                    result.getRegistrationDate() != null
                 )
                 .verifyComplete();
     }
@@ -62,29 +63,29 @@ class SaveUserUseCaseTest {
     void saveUserWithEmailValidation_Success() {
         // Arrange
         User user = User.builder()
-                .nombres("Maria")
-                .apellidos("Garcia")
-                .correoElectronico("maria.garcia@test.com")
-                .fechaNacimiento(LocalDate.of(1985, 8, 20))
-                .salarioBase(6000000.0)
-                .telefono("3109876543")
-                .direccion("Avenida 456 #78-90")
+                .firstName("Jane")
+                .lastName("Smith")
+                .email("jane.smith@test.com")
+                .dateOfBirth(LocalDate.of(1985, 8, 20))
+                .baseSalary(new BigDecimal("6000000.00"))
+                .phone("3109876543")
+                .address("456 Oak Ave")
                 .build();
 
         User savedUser = user.toBuilder()
                 .id(2L)
-                .fechaRegistro(LocalDate.now())
+                .registrationDate(LocalDate.now())
                 .build();
 
-        when(userRepository.existsByEmail("maria.garcia@test.com")).thenReturn(Mono.just(false));
+        when(userRepository.existsByEmail("jane.smith@test.com")).thenReturn(Mono.just(false));
         when(userRepository.save(any(User.class))).thenReturn(Mono.just(savedUser));
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUserWithEmailValidation(user))
                 .expectNextMatches(result -> 
                     result.getId().equals(2L) &&
-                    result.getCorreoElectronico().equals("maria.garcia@test.com") &&
-                    result.getFechaRegistro() != null
+                    result.getEmail().equals("jane.smith@test.com") &&
+                    result.getRegistrationDate() != null
                 )
                 .verifyComplete();
     }
@@ -93,157 +94,308 @@ class SaveUserUseCaseTest {
     void saveUserWithEmailValidation_EmailAlreadyExists() {
         // Arrange
         User user = User.builder()
-                .nombres("Carlos")
-                .apellidos("Lopez")
-                .correoElectronico("carlos.lopez@test.com")
-                .fechaNacimiento(LocalDate.of(1992, 3, 10))
-                .salarioBase(4500000.0)
+                .firstName("Carlos")
+                .lastName("Lopez")
+                .email("carlos.lopez@test.com")
+                .dateOfBirth(LocalDate.of(1992, 3, 10))
+                .baseSalary(new BigDecimal("4500000.00"))
+                .phone("3205551234")
+                .address("789 Pine Rd")
                 .build();
 
         when(userRepository.existsByEmail("carlos.lopez@test.com")).thenReturn(Mono.just(true));
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUserWithEmailValidation(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Email already exists: carlos.lopez@test.com")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_InvalidEmail() {
+    void saveUser_ValidationError_NullFirstName() {
         // Arrange
         User user = User.builder()
-                .nombres("Ana")
-                .apellidos("Rodriguez")
-                .correoElectronico("invalid-email")
-                .fechaNacimiento(LocalDate.of(1988, 12, 25))
-                .salarioBase(5500000.0)
+                .firstName(null)
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("First name cannot be null or empty")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_NullNames() {
+    void saveUser_ValidationError_EmptyLastName() {
         // Arrange
         User user = User.builder()
-                .nombres(null)
-                .apellidos("Martinez")
-                .correoElectronico("test@test.com")
-                .fechaNacimiento(LocalDate.of(1995, 7, 14))
-                .salarioBase(4000000.0)
+                .firstName("John")
+                .lastName("")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Last name cannot be null or empty")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_EmptyNames() {
+    void saveUser_ValidationError_InvalidEmail() {
         // Arrange
         User user = User.builder()
-                .nombres("")
-                .apellidos("Gonzalez")
-                .correoElectronico("test@test.com")
-                .fechaNacimiento(LocalDate.of(1993, 9, 30))
-                .salarioBase(4800000.0)
+                .firstName("John")
+                .lastName("Doe")
+                .email("invalid-email")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Email must have a valid format")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_InvalidSalary() {
+    void saveUser_ValidationError_NullEmail() {
         // Arrange
         User user = User.builder()
-                .nombres("Pedro")
-                .apellidos("Hernandez")
-                .correoElectronico("pedro@test.com")
-                .fechaNacimiento(LocalDate.of(1991, 4, 18))
-                .salarioBase(-1000000.0)
+                .firstName("John")
+                .lastName("Doe")
+                .email(null)
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Email cannot be null or empty")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_SalaryTooHigh() {
+    void saveUser_ValidationError_NegativeSalary() {
         // Arrange
         User user = User.builder()
-                .nombres("Laura")
-                .apellidos("Diaz")
-                .correoElectronico("laura@test.com")
-                .fechaNacimiento(LocalDate.of(1987, 11, 5))
-                .salarioBase(20000000.0)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("-1000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Base salary cannot be negative")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_FutureDateOfBirth() {
+    void saveUser_ValidationError_ExcessiveSalary() {
         // Arrange
         User user = User.builder()
-                .nombres("Roberto")
-                .apellidos("Moreno")
-                .correoElectronico("roberto@test.com")
-                .fechaNacimiento(LocalDate.now().plusDays(1))
-                .salarioBase(5200000.0)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("20000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Base salary cannot exceed 15,000,000")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_InvalidPhone() {
+    void saveUser_ValidationError_FutureDateOfBirth() {
         // Arrange
         User user = User.builder()
-                .nombres("Carmen")
-                .apellidos("Vargas")
-                .correoElectronico("carmen@test.com")
-                .fechaNacimiento(LocalDate.of(1989, 6, 22))
-                .salarioBase(4700000.0)
-                .telefono("abc123")
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.now().plusYears(1))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Date of birth cannot be in the future")
+                )
                 .verify();
     }
 
     @Test
-    void saveUser_RepositoryError() {
+    void saveUser_ValidationError_InvalidDateOfBirth() {
         // Arrange
         User user = User.builder()
-                .nombres("Fernando")
-                .apellidos("Silva")
-                .correoElectronico("fernando@test.com")
-                .fechaNacimiento(LocalDate.of(1994, 2, 8))
-                .salarioBase(5100000.0)
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.now().minusYears(150))
+                .baseSalary(new BigDecimal("5000000.00"))
                 .build();
-
-        when(userRepository.save(any(User.class))).thenReturn(Mono.error(new RuntimeException("Database error")));
 
         // Act & Assert
         StepVerifier.create(saveUserUseCase.saveUser(user))
-                .expectError(RuntimeException.class)
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Date of birth seems invalid")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_InvalidPhoneNumber() {
+        // Arrange
+        User user = User.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .phone("abc123")
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Phone number must contain only digits")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_ShortPhoneNumber() {
+        // Arrange
+        User user = User.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .phone("123")
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Phone number must contain only digits")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_LongAddress() {
+        // Arrange
+        String longAddress = "A".repeat(201);
+        User user = User.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .address(longAddress)
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("Address cannot exceed 200 characters")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_ShortFirstName() {
+        // Arrange
+        User user = User.builder()
+                .firstName("J")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("First name must have at least 2 characters")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_LongFirstName() {
+        // Arrange
+        String longName = "A".repeat(51);
+        User user = User.builder()
+                .firstName(longName)
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("First name cannot exceed 50 characters")
+                )
+                .verify();
+    }
+
+    @Test
+    void saveUser_ValidationError_FirstNameWithNumbers() {
+        // Arrange
+        User user = User.builder()
+                .firstName("John123")
+                .lastName("Doe")
+                .email("john.doe@test.com")
+                .dateOfBirth(LocalDate.of(1990, 5, 15))
+                .baseSalary(new BigDecimal("5000000.00"))
+                .build();
+
+        // Act & Assert
+        StepVerifier.create(saveUserUseCase.saveUser(user))
+                .expectErrorMatches(throwable -> 
+                    throwable instanceof IllegalArgumentException &&
+                    throwable.getMessage().contains("First name can only contain letters and spaces")
+                )
                 .verify();
     }
 }

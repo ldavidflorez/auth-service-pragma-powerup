@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -22,26 +23,26 @@ public class UserData {
     private Long id;
     
     @Column("nombres")
-    private String nombres;
+    private String firstName;
     
     @Column("apellidos")
-    private String apellidos;
+    private String lastName;
     
     @Column("fecha_nacimiento")
-    private LocalDate fechaNacimiento;
+    private LocalDate dateOfBirth;
     
     @Column("direccion")
-    private String direccion;
+    private String address;
     
     @Column("telefono")
-    private String telefono;
+    private String phone;
     
     @Column("correo_electronico")
-    private String correoElectronico;
+    private String email;
     
     @Column("salario_base")
-    private Double salarioBase;
+    private BigDecimal baseSalary;
     
     @Column("fecha_registro")
-    private LocalDate fechaRegistro;
+    private LocalDate registrationDate;
 }

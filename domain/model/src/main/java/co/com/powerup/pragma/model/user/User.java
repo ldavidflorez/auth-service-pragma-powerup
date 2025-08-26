@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -16,16 +17,16 @@ import java.time.LocalDate;
 public class User {
     
     private Long id;
-    private String nombres;
-    private String apellidos;
-    private LocalDate fechaNacimiento;
-    private String direccion;
-    private String telefono;
-    private String correoElectronico;
-    private Double salarioBase;
-    private LocalDate fechaRegistro;
+    private String firstName;
+    private String lastName;
+    private LocalDate dateOfBirth;
+    private String address;
+    private String phone;
+    private String email;
+    private BigDecimal baseSalary;
+    private LocalDate registrationDate;
     
-    public void setFechaRegistro() {
-        this.fechaRegistro = LocalDate.now();
+    public void setRegistrationDate() {
+        this.registrationDate = LocalDate.now();
     }
 }
